@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Real-time HTML and CSS Editor</title>
+
+<style type="text/css">
+body {
+	height: 100%;
+	width: 95%;
+}
+</style>
+<style type="text/css" media="screen">
+#divin {
+	width: 100%; 
+	height: 100%;
+	background-color: lightgray;
+}
+#result {
+	position: absolute;
+	left: 41%;
+	width: 58% ;
+	height: 95%;
+	border-left: 1px solid lightgray;
+}
+#divhtml { 
+	resize: vertical;
+        position: absolute;
+        top: 0;
+        width: 100%;
+	height: 65%;
+	margin:0;
+}
+#divmd { 
+	resize: vertical;
+	display: none;
+        position: absolute;
+        top: 0;
+        width: 100%;
+	height: 65%;
+	margin:0;
+}
+#divcss {
+	resize: vertical;
+        position: absolute;
+        top: 65.1%;
+        width: 100%;
+	height: 15%;
+        margin:0;
+}
+#divjs {
+	position: absolute;
+        top: 80.3%;
+        width: 100%;
+	height: 15%;
+        margin:0;
+}
+#conf {
+	position: absolute;
+        top: 95.5%;
+        width: 100%;
+	height: 2%;
+        margin:0;
+	font-family: monospace;
+	display: inline;
+	vertical-align: middle;
+}
+#conf input {
+	font-family: monospace;
+	font-size: x-small;
+	width: 50%;
+}
+#conf a {
+	color: black; 
+	text-decoration: none;
+}
+</style>
+
+
+<!--[if IE]>
+<script type="text/javascript" charset="utf-8" src="4ie.js"></script>
+<script type="text/javascript" charset="utf-8" src="require.js"></script>
+<script type="text/javascript" charset="utf-8" src="core.js"></script>
+<![endif]-->
+
+
+<script type="text/javascript" charset="utf-8" src="showdown/showdown.min.js"></script>
+<script type="text/javascript" charset="utf-8" src="sweetalert2/sweetalert2.all.js"></script>
+
+<script type="text/javascript" charset="utf-8" src="base64.js"></script>
+<script type="text/javascript" charset="utf-8" src="ResizeObserver.js"></script>
+
+<script type="text/javascript" charset="utf-8" src="ace/theme-chrome.js"></script>
+<script type="text/javascript" charset="utf-8" src="ace/ext-modelist.js"></script>
+
+<script type="text/javascript" charset="utf-8" src="ace/ace.js"></script>
+
+<script type="text/javascript" charset="utf-8" src="ace/mode-css.js"></script>
+<script type="text/javascript" charset="utf-8" src="ace/mode-html.js"></script>
+<script type="text/javascript" charset="utf-8" src="ace/mode-javascript.js"></script>
+<script type="text/javascript" charset="utf-8" src="ace/mode-markdown.js"></script>
+
+<script type="text/javascript">
+var editorHTML ;
+var editorMD ;
+var editorCSS ;
+var editorJS ;
+
+var converter = new showdown.Converter() ;
+converter.setOption('simplifiedAutoLink', true) ;
+converter.setOption('excludeTrailingPunctuationFromURLs', true) ;
+converter.setOption('strikethrough', true );
+converter.setOption('simpleLineBreaks', true);
+converter.setOption('tables', true) ;
+converter.setOption('tablesHeaderId', true) ;
+converter.setOption('ghCodeBlocks', true) ;
+converter.setOption('tasklists', true ) ;
+converter.setOption('underline', true ) ;
+converter.setOption('emoji', true ) ;
+converter.setOption('backslashEscapesHTMLTags', true) ;
+//converter.setOption('ghMentions', true) ;
+//converter.setOption('ghMentionsLink' "https://github.com/{u}" ) ;
+//converter.setFlavor('github');
+
+var flagMD = false ;
+var flag64 = true ;
+
+function getParams() {
+  var params = {};
+  if (location.search) {
+    var parts = location.search.slice(1).split('&');
+
+    parts.forEach(function (part) {
+      var pair = part.split('=');
+      pair[0] = decodeURIComponent(pair[0]);
+      pair[1] = decodeURIComponent(pair[1]);
+      params[pair[0]] = (pair[1] !== 'undefined') ?
+        pair[1] : true;
+    });
+  }
+  return params;
+}
+
+function makeCode() {
+	var txt = editorHTML.getValue() ;
+	var title = document.getElementById('title').value ? document.getElementById('title').value : "Real-time HTML and CSS Editor" ;
+	
+	parent.postMessage( { title: title }, '*') ;
+	
+	var txtJS = editorJS.getValue() ;
+	if( !txtJS.match(/<script[ >]/gi) ) { txtJS = '<script type="text/javascript">\n'+txtJS+'<'+'/script>\n' ; }
+	
+	var txtCSS = editorCSS.getValue() ;
+	if( !txtCSS.match(/<style[ >]/gi) ) { txtCSS = '<style type="text/css">\n'+txtCSS+'</style>\n' ; }
+	
+	if( !txt.match(/<body[ >]/gi) ) { txt = '<body>\n' + txt + '\n</body>\n' ; }
+	if( !txt.match(/<head>/gi) ) { txt = '<head><title>'+title+'</title>\n</head>\n' + txt ; }
+	txt = txt.replace( /<head>/i, '<head>\n' + txtCSS + txtJS ) ;
+	if( !txt.match(/<html[ >]/gi) ) { txt = '<!DOCTYPE html>\n<html>\n<meta charset="utf-8">\n' + txt + ''+'</html>\n' ; }
+	
+	title = null ;
+	txtJS = null ;
+	txtCSS = null ;
+	
+	return txt ;
+}
+
+var updateLoop = null ;
+var updateFlag = false ;
+
+function update() {
+	if( flag64 || !updateFlag ) { return ; }
+	updateFlag = false ;
+	
+	parent.postMessage( { data: makeCode() }, '*'); 
+	
+	title = null ;
+	txt = null ;
+	res = null ;
+}
+
+function switchloop() {
+	if( updateLoop!=null ) {
+		clearInterval(updateLoop) ;
+		updateLoop=null ;
+		document.getElementById('buttonloop').style.color = 'red' ;
+		document.getElementById('buttonloop').innerHTML = '&#9898;' ;
+	} else {
+		updateLoop = setInterval(update, 500) ;
+		document.getElementById('buttonloop').style.color = 'green' ;
+		document.getElementById('buttonloop').innerHTML = '&#9899;' ;
+	}
+}
+
+function updateMD() {
+	if( flag64 ) { return ; }
+	editorHTML.setValue( converter.makeHtml(editorMD.getValue()) ) ;
+}
+
+function switchMD() {
+	if( flag64 ) { return ; }
+	if( !flagMD ) {
+		document.getElementById("divhtml").style.display = 'none' ;
+		document.getElementById("divmd").style.display = 'block' ;
+		document.getElementById("buttonswitch").innerHTML = 'TX' ;
+		flagMD = true ;
+	} else {
+		document.getElementById("divmd").style.display = 'none' ;
+		document.getElementById("divhtml").style.display = 'block' ;
+		document.getElementById("buttonswitch").innerHTML = 'MD' ;
+		flagMD = false ;
+	}
+	resize() ;
+}
+
+function Bencode(st) { return Base64.encode(st).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'.') ; }
+function Bdecode(st) { return Base64.decode( st.replace(/\-/g,'+').replace(/_/g,'/').replace(/\./g,'=') ) ; }
+
+function switch64() {
+	if( !flag64 ) {
+		flag64 = true ;
+		document.getElementById("button64").innerHTML = '<b>64</b>' ;
+		document.getElementById("button64").style.color = 'white' ;
+		document.getElementById("button64").style.backgroundColor = 'red' ;
+		editorHTML.setValue( Base64.encode( editorHTML.getValue() ) ) ; editorHTML.setReadOnly(true) ;
+		editorCSS.setValue( Base64.encode( editorCSS.getValue() ) ) ; editorCSS.setReadOnly(true) ;
+		editorJS.setValue( Base64.encode( editorJS.getValue() ) ) ; //editorJS.setReadOnly(true) ;
+		document.getElementById('title').value = Base64.encode( document.getElementById('title').value ) ; document.getElementById('title').readOnly = true; 
+	} else {
+		editorHTML.setValue( Base64.decode( editorHTML.getValue() ) ) ; editorHTML.setReadOnly(false) ;
+		editorCSS.setValue( Base64.decode( editorCSS.getValue() ) ) ; editorCSS.setReadOnly(false) ;
+		editorJS.setValue( Base64.decode( editorJS.getValue() ) ) ; editorJS.setReadOnly(false) ;
+		document.getElementById('title').value = Base64.decode( document.getElementById('title').value ) ; document.getElementById('title').readOnly = false; 
+		document.getElementById("button64").innerHTML = '<del>64</del>' ;
+		document.getElementById("button64").style.color = 'black' ;
+		document.getElementById("button64").style.backgroundColor = 'white' ;
+		flag64 = false ;
+	}
+}
+
+var parentUrl = '' ;
+
+function alertresult() {
+	if( !flag64 ) {
+		swal({
+			title: '<i>HTML result</i>',
+			type: 'info',
+			html:
+				'<textarea style="width: 450px; height: 150px;" readonly>' +
+				makeCode() +
+				'</textarea>',
+			showCloseButton: true,
+			focusConfirm: false,
+			confirmButtonText: 'Ok !', 
+			confirmButtonAriaLabel: 'Ok !'
+		});
+	} else {
+		var title = document.getElementById("title").value.replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'.') ;
+		url = parentUrl
+			+ '?title=' + title
+			+ '&html=' + editorHTML.getValue().replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'.')
+			+ '&css=' + editorCSS.getValue().replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'.')
+			+ '&js=' + editorJS.getValue().replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'.')
+			;
+		swal({
+			title: '<i>URL result</i>',
+			type: 'info',
+			html:
+				'Follow the <a target="_top" href="'+url+'">link</a><br/>'+
+				'<textarea style="width: 450px; height: 150px;" readonly>' +
+				url +
+				'</textarea>',
+			showCloseButton: true,
+			focusConfirm: false,
+			confirmButtonText: 'Ok !',
+			confirmButtonAriaLabel: 'Ok !'
+		});
+		title = null ;
+	}
+}
+
+function resize() {
+	p = (document.getElementById('divcss').offsetTop+document.getElementById('divcss').offsetHeight+3) ;
+	if( p> (document.getElementById('conf').offsetTop-20) ) { p = document.getElementById('conf').offsetTop - 20 ; }
+	document.getElementById('divjs').style.top = p +'px' ;
+	document.getElementById('divjs').style.height = parseInt(document.getElementById('conf').offsetTop-document.getElementById('divjs').offsetTop-3)+'px' ;
+	if( flagMD ) {
+		document.getElementById('divcss').style.top = (document.getElementById('divmd').offsetTop+document.getElementById('divmd').offsetHeight+3)+'px' ;
+		document.getElementById('divcss').style.height = parseInt(document.getElementById('divjs').offsetTop-(document.getElementById('divmd').offsetTop+document.getElementById('divmd').offsetHeight)-6)+'px' ;
+	} else {
+		document.getElementById('divcss').style.top = (document.getElementById('divhtml').offsetTop+document.getElementById('divhtml').offsetHeight+3)+'px' ;
+		document.getElementById('divcss').style.height = parseInt(document.getElementById('divjs').offsetTop-(document.getElementById('divhtml').offsetTop+document.getElementById('divhtml').offsetHeight)-6)+'px' ;
+	}
+	
+	editorJS.resize() ;
+	editorCSS.resize() ;
+	if( flagMD ) {
+		editorMD.resize() ;
+	} else {
+		editorHTML.resize() ;
+	}
+}
+window.onresize = resize ;
+
+function sayHi(){ alert('Hi') ; }
+
+function reinit() {
+	swal({
+		title: 'Are you sure?',
+		text: "Can you confirm you want to reinit!",
+		type: 'warning',
+		showCancelButton: true,
+		confirmButtonColor: '#3085d6',
+		cancelButtonColor: '#d33',
+		confirmButtonText: 'Yes, reinit it!'
+	}).then((result) => {
+		if (result.value) {
+			flag64 = true ;
+			editorHTML.setValue( "" ) ;
+			editorHTML.setValue( '<'+'!-- Here the HTML code --'+'>\n' ) ;
+			if( flagMD ) {
+				editorCSS.setValue( '/'+'* Here the CSS code *'+'/\n@import url("github.css");\n' ) ;
+			} else {
+				editorCSS.setValue( '/'+'* Here the CSS code *'+'/\n' ) ;
+			}
+			editorJS.setValue( '/'+'* Here the javascript code *'+'/\n' ) ;
+			editorMD.setValue( '\n[comment]: # (Here is the Markdown code)\n' ) ;
+			document.getElementById('title').value = '' ;
+			flag64 = false ;
+			update() ;
+			swal(
+				'Reinit!',
+				'Reinit done.',
+				'success'
+			) ;
+		}
+	}) ;
+}
+
+function init() {
+	var params = getParams() ;
+	if( params.html ) {
+		editorHTML.setValue( "" ) ;
+		if( params.html.length>0 ) { editorHTML.setValue( Bdecode(params.html) ) ; }
+	}
+	if( params.css ) { if( params.css.length==0 ) { editorCSS.setValue("") ; } else { editorCSS.setValue( Bdecode(params.css) ) ; } }
+	if( params.js ) { if( params.js.length==0 ) { editorJS.setValue("") ; } else { editorJS.setValue( Bdecode(params.js) ) ; } }
+	if( params.title ) { if( params.title.length==0 ) { document.getElementById('title').value = "" ; } else { document.getElementById('title').value = Bdecode(params.title) ; } }
+	if( params.href ) { parentUrl = atob(params.href).replace(/\?.*$/,'') ; } 
+	flag64 = false ;
+	update();
+	
+	updateLoop = setInterval(update, 500) ;
+}
+</script>
+</head>
+
+<body onLoad="init();">
+
+<div id="divin" style="display:block;">
+  <div id="divhtml">&lt;!-- Here the HTML code --&gt;
+</div>
+  <div id="divmd">
+[comment]: # (Here is the Markdown code)
+</div>
+  <div id="divcss">/* Here the CSS code */
+</div>
+  <div id="divjs">/* Here the javascript code */
+</div>
+  <div id="conf">
+  <span style="color: yellow; background-color: black;">&#9762;</span> 
+  <a target="_top" href="HTMLEditor.html" title="Empty file">&#8962;</a> 
+  <a id="buttonswitch" href="javascript:void();" title="Switch HTML/Markdown" onclick="switchMD();return false;">MD</a> 
+  <a id="reinit" href="javascript:void();" title="Reinit data" onclick="reinit();return false;" style="color: orange;"><b>&#10226;</b></a> 
+  <a id="button64" href="javascript:void();" title="Switch to base64" onclick="switch64();return false;"><del>64</del></a> 
+  <a id="buttonresult" href="javascript:void();" title="Get result" onclick="alertresult();return false;" style="font-size: small; color: blue;">&#9938;</a> 
+  <a id="buttonloop" href="javascript:void();" title="Swith refresh on off" onclick="switchloop();return false;" style="color: green; font-size: large;">&#9899;</a> 
+  &nbsp;<input id="title" type="text" placeholder="Here the page title" onKeyUp="updateFlag=true;return false;"/>
+</div>
+
+<script type="text/javascript">
+
+const obhtml = new ResizeObserver((entries, observer) => {
+    for (const entry of entries) {
+        const {left, top, width, height} = entry.contentRect;
+	resize() ;
+    }
+});
+obhtml.observe( document.getElementById("divhtml") ) ;
+
+const obmd = new ResizeObserver((entries, observer) => {
+    for (const entry of entries) {
+        const {left, top, width, height} = entry.contentRect;
+	resize() ;
+    }
+});
+obmd.observe( document.getElementById("divmd") ) ;
+
+const obcss = new ResizeObserver((entries, observer) => {
+    for (const entry of entries) {
+        const {left, top, width, height} = entry.contentRect;
+	resize();
+    }
+});
+obcss.observe( document.getElementById("divcss") ) ;
+
+editorHTML = ace.edit("divhtml");
+        editorHTML.setTheme("ace/theme/chrome");
+	editorHTML.session.setMode("ace/mode/html");
+	editorHTML.setShowPrintMargin(false);
+	editorHTML.$blockScrolling = Infinity ;
+	editorHTML.resize();
+	editorHTML.getSession().on('change', function(e) { updateFlag = true ; });
+	
+editorMD = ace.edit("divmd");
+        editorMD.setTheme("ace/theme/chrome");
+	editorMD.session.setMode("ace/mode/markdown");
+	editorMD.setShowPrintMargin(false);
+	editorMD.$blockScrolling = Infinity ;
+	editorMD.resize();
+	editorMD.getSession().on('change', function(e) { updateMD() ; updateFlag = true ; });
+	
+editorCSS = ace.edit("divcss");
+        editorCSS.setTheme("ace/theme/chrome");
+	editorCSS.session.setMode("ace/mode/css");
+	editorCSS.setShowPrintMargin(false);
+	editorCSS.$blockScrolling = Infinity ;
+	editorCSS.resize();
+	editorCSS.getSession().on('change', function(e) { updateFlag = true ; });
+	editorCSS.container.style.background="#e3e3e3" ;
+	
+editorJS = ace.edit("divjs");
+        editorJS.setTheme("ace/theme/chrome");
+	editorJS.setShowPrintMargin(false);
+	editorJS.session.setMode("ace/mode/javascript");
+	editorJS.$blockScrolling = Infinity ;
+	editorJS.resize();
+	editorJS.getSession().on('change', function(e) { updateFlag = true ; });
+	
+resize() ;
+</script>
+
+</div>
+</body>
+</html>
