@@ -20,3 +20,13 @@ All these projects are included into **HTML Editor**
 
     git clone https://github.com/cyd01/HTMLEditor.git
 
+## Usage
+| Symbol                                                                              |      Signification                   |
+|:-----------------------------------------------------------------------------------:|--------------------------------------|
+| <span style="color: green; background-color: black;">&#9762;</span>                 | Here is my signature  :smile:        |
+| &#8962;                                                                             | Get an empty editor                  |
+| MD/TX                                                                               | Switch from HTML and Markdown editor |
+| <span style="color: orange;"><b>&#10226;</b></span>                                 | Re-init the editor                   |
+| <del>64</del>/<span style="color: white; background-color: green;">64</span>        | Switch to base64                     |
+| <span style="font-size: small; color: blue;">&#9938;</span>                         | Get the result complete code         |
+| <span style="color: green;">&#9899;</span>/<span style="color: red;">&#9898;</span> | Start/stop automatic update          |
