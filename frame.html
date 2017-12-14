@@ -23,42 +23,42 @@ body {
 	height: 95%;
 	border-left: 1px solid lightgray;
 }
+
+.editbox {
+	left: 0px;
+	right: 0px;
+	margin: 0;
+}
+
 #divhtml { 
 	resize: vertical;
         position: absolute;
         top: 0;
-        width: 100%;
-	height: 65%;
-	margin:0;
+        height: 65%;
 }
 #divmd { 
 	resize: vertical;
 	display: none;
         position: absolute;
         top: 0;
-        width: 100%;
 	height: 65%;
-	margin:0;
 }
 #divcss {
 	resize: vertical;
         position: absolute;
         top: 65.1%;
-        width: 100%;
 	height: 15%;
-        margin:0;
 }
 #divjs {
 	position: absolute;
         top: 80.3%;
-        width: 100%;
 	height: 15%;
-        margin:0;
 }
+
 #conf {
 	position: absolute;
         top: 95.5%;
-        width: 100%;
+        width: 92%;
 	height: 2%;
         margin:0;
 	font-family: monospace;
@@ -221,7 +221,7 @@ function switch64() {
 		flag64 = true ;
 		document.getElementById("button64").innerHTML = '<b>64</b>' ;
 		document.getElementById("button64").style.color = 'white' ;
-		document.getElementById("button64").style.backgroundColor = 'red' ;
+		document.getElementById("button64").style.backgroundColor = 'green' ;
 		editorHTML.setValue( Base64.encode( editorHTML.getValue() ) ) ; editorHTML.setReadOnly(true) ;
 		editorCSS.setValue( Base64.encode( editorCSS.getValue() ) ) ; editorCSS.setReadOnly(true) ;
 		editorJS.setValue( Base64.encode( editorJS.getValue() ) ) ; //editorJS.setReadOnly(true) ;
@@ -358,17 +358,17 @@ function init() {
 <body onLoad="init();">
 
 <div id="divin" style="display:block;">
-  <div id="divhtml">&lt;!-- Here the HTML code --&gt;
+  <div id="divhtml" class="editbox">&lt;!-- Here the HTML code --&gt;
 </div>
-  <div id="divmd">
+  <div id="divmd" class="editbox">
 [comment]: # (Here is the Markdown code)
 </div>
-  <div id="divcss">/* Here the CSS code */
+  <div id="divcss" class="editbox">/* Here the CSS code */
 </div>
-  <div id="divjs">/* Here the javascript code */
+  <div id="divjs" class="editbox">/* Here the javascript code */
 </div>
   <div id="conf">
-  <span style="color: yellow; background-color: black;">&#9762;</span> 
+  <span style="color: green; background-color: black;">&#9762;</span> 
   <a target="_top" href="HTMLEditor.html" title="Empty file">&#8962;</a> 
   <a id="buttonswitch" href="javascript:void();" title="Switch HTML/Markdown" onclick="switchMD();return false;">MD</a> 
   <a id="reinit" href="javascript:void();" title="Reinit data" onclick="reinit();return false;" style="color: orange;"><b>&#10226;</b></a> 
