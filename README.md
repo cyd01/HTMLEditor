@@ -13,8 +13,8 @@ All these projects are included into **HTML Editor**
 
 ## Demos
 
-- **Basic demo**: https://ken.9bis.com/public/HTMLEditor/HTMLEditor.html
-- **Markdown demo**: https://ken.9bis.com/public/HTMLEditor/
+- **Basic demo**: http://htmleditor.cyd.ovh/HTMLEditor.html
+- **Markdown demo**: http://htmleditor.cyd.ovh
 
 ## Getting the repository
 
