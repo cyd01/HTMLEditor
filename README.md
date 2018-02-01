@@ -14,7 +14,7 @@ All these projects are included into **HTML Editor**
 ## Demos
 
 - **Basic demo**: http://htmleditor.cyd.ovh/HTMLEditor.html
-- **Markdown demo**: http://htmleditor.cyd.ovh
+- **Markdown demo**: http://htmleditor.cyd.ovh/MarkDownEditor.html
 
 ## Getting the repository
 
