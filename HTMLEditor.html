@@ -12,8 +12,11 @@ function init() {
 window.addEventListener('message', function(event) { 
     if( event.data.hasOwnProperty('title') ) { window.document.title = event.data.title ; }
     if( event.data.hasOwnProperty('data') ) {
+	sx = window.result.scrollX ;
+	sy = window.result.scrollY ;
     	window.result.document.write( event.data.data );
 	window.result.document.close();
+	window.result.scrollBy(sx,sy);
     }
 }); 
 </script>
@@ -33,3 +36,4 @@ This script is not compatible with Internet Explorer.
 <![endif]>
 
 </html>
+
