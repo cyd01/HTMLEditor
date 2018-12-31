@@ -9,14 +9,23 @@ function init() {
 	window.in.location='frame.html?href='+btoa(location.href)+(location.search.length>0?'&'+location.search.slice(1):'') ;
 }
 
+function docheight(d) {
+	var body = d.body,
+	    html = d.documentElement;
+	var height = Math.max( body.scrollHeight, body.offsetHeight, 
+                       html.clientHeight, html.scrollHeight, html.offsetHeight );
+	return height;
+}
+
 window.addEventListener('message', function(event) { 
     if( event.data.hasOwnProperty('title') ) { window.document.title = event.data.title ; }
     if( event.data.hasOwnProperty('data') ) {
+	sh = docheight(window.result.document) ;
 	sx = window.result.scrollX ;
 	sy = window.result.scrollY ;
     	window.result.document.write( event.data.data );
 	window.result.document.close();
-	window.result.scrollBy(sx,sy);
+	window.result.scrollBy(sx,sy+(docheight(window.result.document)-sh));
     }
 }); 
 </script>
